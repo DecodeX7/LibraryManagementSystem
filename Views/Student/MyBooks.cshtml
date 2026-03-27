@@ -1,0 +1,127 @@
+﻿@model List<LibraryManagementSystem.Models.ViewModels.IssuedBookViewModel>
+@{
+    ViewData["Title"] = "My Issued Books";
+    var overdueList = Model.Where(i => i.OverdueDays > 0 && i.Status == "Issued").ToList();
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="fw-bold mb-0">
+        <i class="bi bi-journal-check me-2 text-success"></i>My Issued Books
+    </h4>
+    <a href="/Student/Books" class="btn btn-primary btn-sm">
+        <i class="bi bi-search me-1"></i>Browse More Books
+    </a>
+</div>
+
+<!-- Summary Pills -->
+<div class="d-flex gap-2 flex-wrap mb-4">
+    <span class="badge bg-primary fs-6 fw-normal px-3 py-2">
+        Total: @Model.Count
+    </span>
+    <span class="badge bg-warning text-dark fs-6 fw-normal px-3 py-2">
+        Active: @Model.Count(i => i.Status == "Issued")
+    </span>
+    <span class="badge bg-danger fs-6 fw-normal px-3 py-2">
+        Overdue: @Model.Count(i => i.OverdueDays > 0 && i.Status == "Issued")
+    </span>
+    <span class="badge bg-success fs-6 fw-normal px-3 py-2">
+        Returned: @Model.Count(i => i.Status == "Returned")
+    </span>
+</div>
+
+@if (!Model.Any())
+{
+    <div class="text-center py-5 text-muted">
+        <i class="bi bi-journal-x fs-1 d-block mb-2"></i>
+        No books issued yet.
+        <a href="/Student/Books" class="d-block mt-2">Browse and request a book</a>
+    </div>
+}
+else
+{
+    @if (overdueList.Any())
+    {
+        <div class="alert alert-danger mb-4">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            <strong>@overdueList.Count book(s) overdue!</strong>
+            Please return them immediately to avoid additional fines.
+            Total fine: <strong>&#8377;@overdueList.Sum(i => i.FineAmount)</strong>
+        </div>
+    }
+
+    <div class="row g-3">
+        @foreach (var i in Model)
+        {
+            var isOverdue = i.OverdueDays > 0 && i.Status == "Issued";
+            var borderColor = isOverdue ? "#e74c3c"
+            : i.Status == "Returned" ? "#2ecc71" : "#f39c12";
+            <div class="col-lg-6">
+                <div class="card border-0 shadow-sm h-100"
+                     style="border-left: 4px solid @borderColor !important">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <div>
+                                <h6 class="fw-bold mb-0">@i.BookName</h6>
+                                <small class="text-muted"><code>@i.BookCode</code></small>
+                            </div>
+                            @{
+                                var sc = i.Status switch
+                                {
+                                                    "Issued" when isOverdue => "bg-danger",
+                                                    "Issued" => "bg-warning text-dark",
+                                                    "Returned" => "bg-success",
+                                    _ => "bg-secondary"
+                                };
+                            }
+                            <span class="badge @sc">
+                                @(isOverdue ? "Overdue" : i.Status)
+                            </span>
+                        </div>
+
+                        <div class="row g-2 small text-muted mb-3">
+                            <div class="col-6">
+                                <i class="bi bi-calendar-check me-1"></i>
+                                Issued: <strong>@i.IssueDate.ToString("dd MMM yyyy")</strong>
+                            </div>
+                            <div class="col-6 @(isOverdue ? "text-danger" : "")">
+                                <i class="bi bi-calendar-x me-1"></i>
+                                Due: <strong>@i.DueDate.ToString("dd MMM yyyy")</strong>
+                            </div>
+                            @if (i.ReturnDate.HasValue)
+                            {
+                                <div class="col-6 text-success">
+                                    <i class="bi bi-calendar2-check me-1"></i>
+                                    Returned: <strong>@i.ReturnDate.Value.ToString("dd MMM yyyy")</strong>
+                                </div>
+                            }
+                            @if (isOverdue)
+                            {
+                                <div class="col-6 text-danger fw-bold">
+                                    <i class="bi bi-clock-history me-1"></i>
+                                    @i.OverdueDays days overdue
+                                </div>
+                            }
+                        </div>
+
+                        @if (i.FineAmount > 0 && i.Status == "Issued")
+                        {
+                            <div class="alert alert-warning py-2 small mb-0">
+                                <i class="bi bi-currency-rupee me-1"></i>
+                                Fine: <strong>&#8377;@i.FineAmount</strong>
+                                (@i.OverdueDays days x &#8377;10)
+                                @if (i.FinePaid)
+                                {
+                                    <span class="badge bg-success ms-2">Paid</span>
+                                }
+                                @if (i.ReminderSent)
+                                {
+                                    <span class="badge bg-info ms-1">Reminder sent</span>
+                                }
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}

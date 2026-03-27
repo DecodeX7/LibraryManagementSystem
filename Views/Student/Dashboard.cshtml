@@ -1,0 +1,247 @@
+﻿@model LibraryManagementSystem.Models.ViewModels.StudentDashboardViewModel
+@{
+    ViewData["Title"] = "Dashboard";
+}
+
+<!-- Stat Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3 col-6">
+        <div class="stat-card card-blue">
+            <i class="bi bi-book stat-icon"></i>
+            <div class="stat-number">@Model.ActiveIssues</div>
+            <div class="stat-label">Books Issued</div>
+            <div class="stat-sub">Currently with you</div>
+        </div>
+    </div>
+    <div class="col-md-3 col-6">
+        <div class="stat-card card-purple">
+            <i class="bi bi-hourglass-split stat-icon"></i>
+            <div class="stat-number">@Model.PendingRequests</div>
+            <div class="stat-label">Pending Requests</div>
+            <div class="stat-sub">Awaiting approval</div>
+        </div>
+    </div>
+    <div class="col-md-3 col-6">
+        <div class="stat-card card-red">
+            <i class="bi bi-exclamation-triangle stat-icon"></i>
+            <div class="stat-number">@Model.OverdueBooks</div>
+            <div class="stat-label">Overdue Books</div>
+            <div class="stat-sub">Return immediately</div>
+        </div>
+    </div>
+    <div class="col-md-3 col-6">
+        <div class="stat-card @(Model.TotalFine > 0 ? "card-red" : "card-green")">
+            <i class="bi bi-currency-rupee stat-icon"></i>
+            <div class="stat-number">₹@Model.TotalFine</div>
+            <div class="stat-label">Pending Fine</div>
+            <div class="stat-sub">@(Model.TotalFine > 0 ? "Please clear soon" : "All clear!")</div>
+        </div>
+    </div>
+</div>
+
+<!-- Fine Alert -->
+@if (Model.TotalFine > 0)
+{
+    <div style="background:linear-gradient(135deg,#ff6b6b,#ee5a24);border-radius:14px;padding:18px 22px;margin-bottom:24px;color:#fff;display:flex;align-items:center;gap:14px">
+        <i class="bi bi-exclamation-triangle-fill" style="font-size:28px;opacity:0.9"></i>
+        <div>
+            <div style="font-weight:600;font-size:15px">You have a pending fine of ₹@Model.TotalFine</div>
+            <div style="font-size:13px;opacity:0.85">Please return overdue books immediately to stop fine from increasing.</div>
+        </div>
+    </div>
+}
+
+<!-- Quick Actions -->
+<div class="row g-3 mb-4">
+    <div class="col-4">
+        <a href="/Student/Books" class="action-card">
+            <div class="action-icon" style="background:#eef2ff">
+                <i class="bi bi-search" style="color:#6366f1"></i>
+            </div>
+            <div style="font-size:13px;font-weight:600">Browse Books</div>
+            <div style="font-size:11px;color:#8892a4;margin-top:2px">Find & request</div>
+        </a>
+    </div>
+    <div class="col-4">
+        <a href="/Student/MyBooks" class="action-card">
+            <div class="action-icon" style="background:#e8fdf5">
+                <i class="bi bi-journal-check" style="color:#10b981"></i>
+            </div>
+            <div style="font-size:13px;font-weight:600">My Books</div>
+            <div style="font-size:11px;color:#8892a4;margin-top:2px">Issued to you</div>
+        </a>
+    </div>
+    <div class="col-4">
+        <a href="/Student/MyRequests" class="action-card">
+            <div class="action-icon" style="background:#fff7e6">
+                <i class="bi bi-clock-history" style="color:#f59e0b"></i>
+            </div>
+            <div style="font-size:13px;font-weight:600">
+                My Requests
+                @if (Model.PendingRequests > 0)
+                {
+                    <span class="badge bg-danger ms-1">@Model.PendingRequests</span>
+                }
+            </div>
+            <div style="font-size:11px;color:#8892a4;margin-top:2px">Track status</div>
+        </a>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Recent Issued -->
+    @if (Model.RecentIssued.Any())
+    {
+        <div class="col-lg-7">
+            <div class="section-card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="fw-bold mb-0" style="color:#1a1a2e">
+                            <i class="bi bi-book me-2" style="color:#6366f1"></i>
+                            Recently Issued
+                        </h6>
+                        <small class="text-muted">Books currently with you</small>
+                    </div>
+                    <a href="/Student/MyBooks"
+                       style="font-size:13px;color:#6366f1;text-decoration:none;font-weight:500">
+                        View all <i class="bi bi-arrow-right ms-1"></i>
+                    </a>
+                </div>
+                <div class="card-body p-0">
+                    <table class="table mb-0">
+                        <thead>
+                            <tr>
+                                <th class="ps-4">Book</th>
+                                <th>Due Date</th>
+                                <th>Status</th>
+                                <th>Fine</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var i in Model.RecentIssued)
+                            {
+                                var isOverdue = i.OverdueDays > 0 && i.Status == "Issued";
+                                <tr>
+                                    <td class="ps-4">
+                                        <div style="font-weight:500;font-size:13px">@i.BookName</div>
+                                        <div style="font-size:11px;color:#8892a4">
+                                            Issued @i.IssueDate.ToString("dd MMM")
+                                        </div>
+                                    </td>
+                                    <td class="@(isOverdue ? "text-danger fw-bold" : "text-muted") small">
+                                        @i.DueDate.ToString("dd MMM yyyy")
+                                        @if (isOverdue)
+                                        {
+                                            <div style="font-size:11px">@i.OverdueDays days late</div>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (isOverdue)
+                                        {
+                                            <span class="badge" style="background:#fff0f0;color:#ef4444">Overdue</span>
+                                        }
+                                        else if (i.Status == "Returned")
+                                        {
+                                            <span class="badge" style="background:#e8fdf5;color:#10b981">Returned</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge" style="background:#fff7e6;color:#f59e0b">Issued</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (i.FineAmount > 0 && i.Status == "Issued")
+                                        {
+                                            <span style="color:#ef4444;font-weight:600;font-size:13px">
+                                                ₹@i.FineAmount
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">—</span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Recent Requests -->
+    @if (Model.RecentRequests.Any())
+    {
+        <div class="col-lg-5">
+            <div class="section-card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="fw-bold mb-0" style="color:#1a1a2e">
+                            <i class="bi bi-clock-history me-2" style="color:#f59e0b"></i>
+                            Recent Requests
+                        </h6>
+                        <small class="text-muted">Your latest book requests</small>
+                    </div>
+                    <a href="/Student/MyRequests"
+                       style="font-size:13px;color:#6366f1;text-decoration:none;font-weight:500">
+                        View all <i class="bi bi-arrow-right ms-1"></i>
+                    </a>
+                </div>
+                <div class="card-body p-0">
+                    <table class="table mb-0">
+                        <thead>
+                            <tr>
+                                <th class="ps-4">Book</th>
+                                <th>Date</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var r in Model.RecentRequests)
+                            {
+                                <tr>
+                                    <td class="ps-4">
+                                        <div style="font-weight:500;font-size:13px">@r.BookName</div>
+                                        <code style="font-size:11px;color:#8892a4">@r.BookCode</code>
+                                    </td>
+                                    <td class="text-muted small">
+                                        @r.RequestDate.ToString("dd MMM")
+                                    </td>
+                                    <td>
+                                        @{
+                                            var (bg, fg) = r.Status switch
+                                            {
+                                                                "Approved" => ("#e8fdf5", "#10b981"),
+                                                                "Rejected" => ("#fff0f0", "#ef4444"),
+                                                _ => ("#fff7e6", "#f59e0b")
+                                            };
+                                        }
+                                        <span class="badge" style="background:@bg;color:@fg">
+                                            @r.Status
+                                        </span>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    }
+
+    @if (!Model.RecentIssued.Any() && !Model.RecentRequests.Any())
+    {
+        <div class="col-12">
+            <div class="section-card text-center py-5">
+                <i class="bi bi-book-half" style="font-size:56px;color:#e0e3ef"></i>
+                <h5 class="mt-3 fw-bold" style="color:#1a1a2e">Welcome to Library MS!</h5>
+                <p class="text-muted mb-4">Start by browsing our book collection</p>
+                <a href="/Student/Books" class="btn btn-primary px-4"
+                   style="background:#6366f1;border:none;border-radius:10px">
+                    <i class="bi bi-search me-2"></i>Browse Books
+                </a>
+            </div>
+        </div>
+    }
+</div>

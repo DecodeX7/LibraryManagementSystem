@@ -1,0 +1,110 @@
+﻿@model List<LibraryManagementSystem.Models.ViewModels.BookRequestViewModel>
+@{
+    ViewData["Title"] = "My Requests";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="fw-bold mb-0">
+        <i class="bi bi-bell me-2 text-warning"></i>My Book Requests
+    </h4>
+    <a href="/Student/Books" class="btn btn-primary btn-sm">
+        <i class="bi bi-plus-lg me-1"></i>Request More Books
+    </a>
+</div>
+
+<!-- Summary -->
+<div class="d-flex gap-2 flex-wrap mb-4">
+    <span class="badge bg-secondary fs-6 fw-normal px-3 py-2">Total: @Model.Count</span>
+    <span class="badge bg-warning text-dark fs-6 fw-normal px-3 py-2">
+        Pending: @Model.Count(r => r.Status == "Pending")
+    </span>
+    <span class="badge bg-success fs-6 fw-normal px-3 py-2">
+        Approved: @Model.Count(r => r.Status == "Approved")
+    </span>
+    <span class="badge bg-danger fs-6 fw-normal px-3 py-2">
+        Rejected: @Model.Count(r => r.Status == "Rejected")
+    </span>
+</div>
+
+@if (!Model.Any())
+{
+    <div class="text-center py-5 text-muted">
+        <i class="bi bi-bell-slash fs-1 d-block mb-2"></i>
+        No requests yet.
+        <a href="/Student/Books" class="d-block mt-2">Browse books to make a request</a>
+    </div>
+}
+else
+{
+    <!-- Filter Tabs -->
+    <ul class="nav nav-tabs mb-3">
+        <li class="nav-item"><a class="nav-link active" href="#" data-filter="all">All</a></li>
+        <li class="nav-item"><a class="nav-link" href="#" data-filter="Pending">Pending</a></li>
+        <li class="nav-item"><a class="nav-link" href="#" data-filter="Approved">Approved</a></li>
+        <li class="nav-item"><a class="nav-link" href="#" data-filter="Rejected">Rejected</a></li>
+    </ul>
+
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0 align-middle" id="req-table">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-3">#</th>
+                            <th>Book</th>
+                            <th class="text-center">Available Copies</th>
+                            <th>Requested On</th>
+                            <th>Status</th>
+                            <th>Remarks</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var (r, idx) in Model.Select((r, i) => (r, i + 1)))
+                        {
+                            <tr data-status="@r.Status">
+                                <td class="ps-3 text-muted">@idx</td>
+                                <td>
+                                    <div class="fw-semibold">@r.BookName</div>
+                                    <small class="text-muted"><code>@r.BookCode</code></small>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge @(r.AvailableQty > 0 ? "bg-success" : "bg-secondary")">
+                                        @r.AvailableQty
+                                    </span>
+                                </td>
+                                <td class="small">@r.RequestDate.ToString("dd MMM yyyy, hh:mm tt")</td>
+                                <td>
+                                    @{
+                                        var sc = r.Status switch
+                                        {
+                                                            "Pending" => "bg-warning text-dark",
+                                                            "Approved" => "bg-success",
+                                                            "Rejected" => "bg-danger",
+                                            _ => "bg-secondary"
+                                        };
+                                    }
+                                    <span class="badge @sc">@r.Status</span>
+                                </td>
+                                <td class="text-muted small">@(r.Remarks ?? "—")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <script>
+        $('[data-filter]').on('click', function (e) {
+            e.preventDefault();
+            $('[data-filter]').removeClass('active');
+            $(this).addClass('active');
+            const filter = $(this).data('filter');
+            $('#req-table tbody tr').each(function () {
+                $(this).toggle(filter === 'all' || $(this).data('status') === filter);
+            });
+        });
+    </script>
+}

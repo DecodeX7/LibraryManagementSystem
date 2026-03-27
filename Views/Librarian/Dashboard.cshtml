@@ -1,0 +1,172 @@
+﻿@model LibraryManagementSystem.Models.ViewModels.LibrarianDashboardViewModel
+@{
+    ViewData["Title"] = "Dashboard";
+}
+
+<!-- Stat Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-xl-2 col-md-4 col-6">
+        <div class="stat-card card-blue">
+            <i class="bi bi-journals stat-icon"></i>
+            <div class="stat-number">@Model.TotalBooks</div>
+            <div class="stat-label">Total Books</div>
+            <div class="stat-sub">In inventory</div>
+        </div>
+    </div>
+    <div class="col-xl-2 col-md-4 col-6">
+        <div class="stat-card card-green">
+            <i class="bi bi-people stat-icon"></i>
+            <div class="stat-number">@Model.TotalStudents</div>
+            <div class="stat-label">Students</div>
+            <div class="stat-sub">Registered</div>
+        </div>
+    </div>
+    <div class="col-xl-2 col-md-4 col-6">
+        <div class="stat-card card-orange">
+            <i class="bi bi-book stat-icon"></i>
+            <div class="stat-number">@Model.TotalIssued</div>
+            <div class="stat-label">Issued</div>
+            <div class="stat-sub">Currently out</div>
+        </div>
+    </div>
+    <div class="col-xl-2 col-md-4 col-6">
+        <div class="stat-card card-purple">
+            <i class="bi bi-hourglass-split stat-icon"></i>
+            <div class="stat-number">@Model.PendingRequests</div>
+            <div class="stat-label">Pending</div>
+            <div class="stat-sub">Needs approval</div>
+        </div>
+    </div>
+    <div class="col-xl-2 col-md-4 col-6">
+        <div class="stat-card card-red">
+            <i class="bi bi-exclamation-triangle stat-icon"></i>
+            <div class="stat-number">@Model.OverdueBooks</div>
+            <div class="stat-label">Overdue</div>
+            <div class="stat-sub">Past due date</div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+        <a href="/Librarian/AddBooks" class="action-card">
+            <div class="action-icon" style="background:#eef2ff">
+                <i class="bi bi-plus-circle" style="color:#6366f1"></i>
+            </div>
+            <div style="font-size:13px;font-weight:600">Add Books</div>
+        </a>
+    </div>
+    <div class="col-6 col-md-3">
+        <a href="/Librarian/Books" class="action-card">
+            <div class="action-icon" style="background:#e8fdf5">
+                <i class="bi bi-journals" style="color:#10b981"></i>
+            </div>
+            <div style="font-size:13px;font-weight:600">Book Inventory</div>
+        </a>
+    </div>
+    <div class="col-6 col-md-3">
+        <a href="/Librarian/Requests" class="action-card">
+            <div class="action-icon" style="background:#fff7e6">
+                <i class="bi bi-bell" style="color:#f59e0b"></i>
+            </div>
+            <div style="font-size:13px;font-weight:600">
+                Requests
+                @if (Model.PendingRequests > 0)
+                {
+                    <span class="badge bg-danger ms-1">@Model.PendingRequests</span>
+                }
+            </div>
+        </a>
+    </div>
+    <div class="col-6 col-md-3">
+        <a href="/Librarian/IssuedBooks" class="action-card">
+            <div class="action-icon" style="background:#fef3f2">
+                <i class="bi bi-journal-check" style="color:#ef4444"></i>
+            </div>
+            <div style="font-size:13px;font-weight:600">
+                Issued Books
+                @if (Model.OverdueBooks > 0)
+                {
+                    <span class="badge bg-danger ms-1">@Model.OverdueBooks</span>
+                }
+            </div>
+        </a>
+    </div>
+</div>
+
+<!-- Recent Issues Table -->
+<div class="section-card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <div>
+            <h6 class="fw-bold mb-0" style="color:#1a1a2e">
+                <i class="bi bi-clock-history me-2" style="color:#6366f1"></i>
+                Recent Issues
+            </h6>
+            <small class="text-muted">Latest book issuances</small>
+        </div>
+        <a href="/Librarian/IssuedBooks"
+           style="font-size:13px;color:#6366f1;text-decoration:none;font-weight:500">
+            View all <i class="bi bi-arrow-right ms-1"></i>
+        </a>
+    </div>
+    <div class="card-body p-0">
+        <table class="table mb-0">
+            <thead>
+                <tr>
+                    <th class="ps-4">#</th>
+                    <th>Student</th>
+                    <th>Book</th>
+                    <th>Issue Date</th>
+                    <th>Due Date</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (!Model.RecentIssues.Any())
+                {
+                    <tr>
+                        <td colspan="6" class="text-center text-muted py-5">
+                            <i class="bi bi-inbox fs-2 d-block mb-2 opacity-25"></i>
+                            No issues yet
+                        </td>
+                    </tr>
+                }
+                @foreach (var issue in Model.RecentIssues)
+                {
+                    var isOverdue = issue.DueDate < DateTime.Now && issue.Status == "Issued";
+                    <tr>
+                        <td class="ps-4 text-muted small">@issue.IssueId</td>
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <div style="width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#8b5cf6);display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:600;flex-shrink:0">
+                                    @issue.StudentName[0]
+                                </div>
+                                <span style="font-weight:500">@issue.StudentName</span>
+                            </div>
+                        </td>
+                        <td style="color:#555">@issue.BookName</td>
+                        <td class="text-muted small">@issue.IssueDate.ToString("dd MMM yyyy")</td>
+                        <td class="@(isOverdue ? "text-danger fw-bold" : "text-muted") small">
+                            @issue.DueDate.ToString("dd MMM yyyy")
+                        </td>
+                        <td>
+                            @if (isOverdue)
+                            {
+                                <span class="badge" style="background:#fff0f0;color:#ef4444">Overdue</span>
+                            }
+                            else if (issue.Status == "Returned")
+                            {
+                                <span class="badge" style="background:#e8fdf5;color:#10b981">Returned</span>
+                            }
+                            else
+                            {
+                                <span class="badge" style="background:#fff7e6;color:#f59e0b">Issued</span>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

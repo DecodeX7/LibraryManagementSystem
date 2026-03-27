@@ -1,0 +1,162 @@
+﻿@{
+    ViewData["Title"] = "Add Books";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="fw-bold mb-0"><i class="bi bi-plus-circle me-2 text-success"></i>Add Books</h4>
+    <a href="/Librarian/Books" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left me-1"></i>Back to Books
+    </a>
+</div>
+
+<div class="card border-0 shadow-sm">
+    <div class="card-body">
+        <div id="alert-box" class="d-none mb-3"></div>
+
+        <div class="table-responsive">
+            <table class="table align-middle" id="book-table">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width:140px">Book ID / Code</th>
+                        <th>Book Name</th>
+                        <th>Author Name</th>
+                        <th style="width:110px">Quantity</th>
+                        <th style="width:100px">Action</th>
+                    </tr>
+                </thead>
+                <tbody id="book-rows">
+                    <!-- Row template added by JS -->
+                </tbody>
+            </table>
+        </div>
+
+        <div class="d-flex gap-2 mt-3">
+            <button class="btn btn-outline-primary btn-sm" id="btn-add-row">
+                <i class="bi bi-plus-lg me-1"></i>Add Row
+            </button>
+            <button class="btn btn-success px-4" id="btn-submit">
+                <i class="bi bi-cloud-upload me-1"></i>Submit All Books
+            </button>
+            <button class="btn btn-outline-danger btn-sm" id="btn-clear">
+                <i class="bi bi-trash me-1"></i>Clear All
+            </button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let rowCount = 0;
+
+        function createRow() {
+            rowCount++;
+            const tr = `
+            <tr id="row-${rowCount}">
+                <td><input type="text" class="form-control form-control-sm inp-code" placeholder="e.g. BK001" /></td>
+                <td><input type="text" class="form-control form-control-sm inp-name" placeholder="Book title" /></td>
+                <td><input type="text" class="form-control form-control-sm inp-author" placeholder="Author name" /></td>
+                <td><input type="number" class="form-control form-control-sm inp-qty" placeholder="1" min="1" value="1" /></td>
+                <td>
+                    <button class="btn btn-outline-danger btn-sm btn-del" data-row="${rowCount}">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </td>
+            </tr>`;
+            $('#book-rows').append(tr);
+        }
+
+        // Start with 1 row
+        createRow();
+
+        // Add row
+        $('#btn-add-row').on('click', function () {
+            createRow();
+        });
+
+        // Delete row
+        $(document).on('click', '.btn-del', function () {
+            const rowId = $(this).data('row');
+            if ($('#book-rows tr').length === 1) {
+                showAlert('warning', 'At least one row is required.');
+                return;
+            }
+            $(`#row-${rowId}`).remove();
+        });
+
+        // Clear all rows
+        $('#btn-clear').on('click', function () {
+            $('#book-rows').empty();
+            rowCount = 0;
+            createRow();
+            hideAlert();
+        });
+
+        // Submit
+        $('#btn-submit').on('click', function () {
+            const rows = [];
+            let hasError = false;
+
+            $('#book-rows tr').each(function () {
+                const code   = $(this).find('.inp-code').val().trim();
+                const name   = $(this).find('.inp-name').val().trim();
+                const author = $(this).find('.inp-author').val().trim();
+                const qty    = parseInt($(this).find('.inp-qty').val());
+
+                if (!code || !name || !author || isNaN(qty) || qty < 1) {
+                    hasError = true;
+                    $(this).addClass('table-danger');
+                } else {
+                    $(this).removeClass('table-danger');
+                    rows.push({ bookCode: code, bookName: name, authorName: author, quantity: qty });
+                }
+            });
+
+            if (hasError) {
+                showAlert('danger', 'Please fill all fields correctly. Highlighted rows have errors.');
+                return;
+            }
+
+            if (rows.length === 0) {
+                showAlert('warning', 'No valid rows to submit.');
+                return;
+            }
+
+            $('#btn-submit').prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span>Saving...');
+
+            $.ajax({
+                url: '/Librarian/AddBooks',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(rows),
+                success: function (res) {
+                    if (res.success) {
+                        showAlert('success', `✓ ${res.message}` +
+                            (res.skipped && res.skipped.length ? '<br>Skipped: ' + res.skipped.join(', ') : ''));
+                        $('#book-rows').empty();
+                        rowCount = 0;
+                        createRow();
+                    } else {
+                        showAlert('danger', res.message);
+                    }
+                },
+                error: function () {
+                    showAlert('danger', 'Server error. Please try again.');
+                },
+                complete: function () {
+                    $('#btn-submit').prop('disabled', false).html('<i class="bi bi-cloud-upload me-1"></i>Submit All Books');
+                }
+            });
+        });
+
+        function showAlert(type, msg) {
+            $('#alert-box')
+                .removeClass('d-none alert-success alert-danger alert-warning')
+                .addClass(`alert alert-${type}`)
+                .html(msg);
+        }
+
+        function hideAlert() {
+            $('#alert-box').addClass('d-none').removeClass('alert alert-success alert-danger alert-warning');
+        }
+    </script>
+}

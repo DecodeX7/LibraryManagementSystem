@@ -1,0 +1,308 @@
+﻿@model LibraryManagementSystem.Models.ViewModels.AdminDashboardViewModel
+@{
+    ViewData["Title"] = "Dashboard";
+}
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show border-0 rounded-3 mb-4"
+         style="background:#e8fdf5;color:#065f46">
+        <i class="bi bi-check-circle-fill me-2"></i>@TempData["Success"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show border-0 rounded-3 mb-4"
+         style="background:#fff0f0;color:#7f1d1d">
+        <i class="bi bi-x-circle-fill me-2"></i>@TempData["Error"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<!-- Stat Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-xl-2 col-md-4 col-6">
+        <div class="stat-card card-blue">
+            <i class="bi bi-people stat-icon"></i>
+            <div class="stat-number">@Model.TotalStudents</div>
+            <div class="stat-label">Total Students</div>
+            <div class="stat-sub">@Model.ActiveStudents active</div>
+        </div>
+    </div>
+    <div class="col-xl-2 col-md-4 col-6">
+        <div class="stat-card card-teal">
+            <i class="bi bi-journals stat-icon"></i>
+            <div class="stat-number">@Model.TotalBooks</div>
+            <div class="stat-label">Total Books</div>
+            <div class="stat-sub">In library</div>
+        </div>
+    </div>
+    <div class="col-xl-2 col-md-4 col-6">
+        <div class="stat-card card-orange">
+            <i class="bi bi-book stat-icon"></i>
+            <div class="stat-number">@Model.TotalIssued</div>
+            <div class="stat-label">Issued Books</div>
+            <div class="stat-sub">Currently out</div>
+        </div>
+    </div>
+    <div class="col-xl-2 col-md-4 col-6">
+        <div class="stat-card card-red">
+            <i class="bi bi-exclamation-triangle stat-icon"></i>
+            <div class="stat-number">@Model.OverdueBooks</div>
+            <div class="stat-label">Overdue</div>
+            <div class="stat-sub">Past due date</div>
+        </div>
+    </div>
+    <div class="col-xl-2 col-md-4 col-6">
+        <div class="stat-card card-purple">
+            <i class="bi bi-currency-rupee stat-icon"></i>
+            <div class="stat-number">₹@Model.TotalFineAmount</div>
+            <div class="stat-label">Pending Fines</div>
+            <div class="stat-sub">@Model.TotalFines unpaid</div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <!-- Librarian Card -->
+    <div class="col-lg-5">
+        <div class="section-card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="fw-bold mb-0" style="color:#1a1a2e">
+                        <i class="bi bi-person-badge me-2" style="color:#6366f1"></i>
+                        Librarian Account
+                    </h6>
+                    <small class="text-muted">Manage librarian credentials</small>
+                </div>
+                <a href="/Admin/EditLibrarian"
+                   style="background:#eef2ff;color:#6366f1;padding:6px 14px;border-radius:8px;font-size:13px;font-weight:500;text-decoration:none">
+                    <i class="bi bi-pencil me-1"></i>Edit
+                </a>
+            </div>
+            <div class="card-body p-4">
+                @if (Model.Librarian != null)
+                {
+                    <div id="lib-alert" class="d-none mb-3"></div>
+
+                    <!-- Librarian Avatar -->
+                    <div class="d-flex align-items-center gap-3 mb-4 p-3 rounded-3"
+                         style="background:#f8f9ff">
+                        <div style="width:52px;height:52px;border-radius:14px;background:linear-gradient(135deg,#6366f1,#8b5cf6);display:flex;align-items:center;justify-content:center;color:#fff;font-size:22px;font-weight:700;flex-shrink:0">
+                            @Model.Librarian.FullName[0]
+                        </div>
+                        <div>
+                            <div style="font-weight:600;font-size:15px;color:#1a1a2e">
+                                @Model.Librarian.FullName
+                            </div>
+                            <div style="font-size:13px;color:#8892a4">@Model.Librarian.Email</div>
+                        </div>
+                        <div class="ms-auto">
+                            <span class="badge @(Model.Librarian.IsActive ? "" : "")"
+                                  id="lib-status-badge"
+                                  style="background:@(Model.Librarian.IsActive ? "#e8fdf5" : "#fff0f0");color:@(Model.Librarian.IsActive ? "#10b981" : "#ef4444");font-size:12px;padding:5px 10px">
+                                @(Model.Librarian.IsActive ? "Active" : "Inactive")
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Details -->
+                    <div class="d-flex flex-column gap-3">
+                        <div class="d-flex justify-content-between align-items-center py-2"
+                             style="border-bottom:1px solid #f0f2f5">
+                            <span style="font-size:13px;color:#8892a4">Librarian ID</span>
+                            <code style="font-size:13px;background:#f0f2f5;padding:3px 10px;border-radius:6px;color:#1a1a2e">
+                                @Model.Librarian.LibrarianId
+                            </code>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center py-2"
+                             style="border-bottom:1px solid #f0f2f5">
+                            <span style="font-size:13px;color:#8892a4">Account Created</span>
+                            <span style="font-size:13px;font-weight:500">
+                                @Model.Librarian.CreatedAt.ToString("dd MMM yyyy")
+                            </span>
+                        </div>
+                    </div>
+
+                    <button class="btn w-100 mt-4 fw-500"
+                            id="btn-toggle-lib"
+                            style="background:@(Model.Librarian.IsActive ? "#fff0f0" : "#e8fdf5");color:@(Model.Librarian.IsActive ? "#ef4444" : "#10b981");border:none;border-radius:10px;padding:10px;font-size:13px;font-weight:500">
+                        <i class="bi bi-@(Model.Librarian.IsActive ? "slash-circle" : "check-circle") me-2"></i>
+                        @(Model.Librarian.IsActive ? "Deactivate Account" : "Activate Account")
+                    </button>
+                }
+                else
+                {
+                    <div class="text-center py-4 text-muted">
+                        <i class="bi bi-person-x fs-1 d-block mb-2 opacity-25"></i>
+                        No librarian found
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="col-lg-7">
+        <div class="section-card h-100">
+            <div class="card-header">
+                <h6 class="fw-bold mb-0" style="color:#1a1a2e">
+                    <i class="bi bi-lightning me-2" style="color:#f59e0b"></i>
+                    Quick Actions
+                </h6>
+                <small class="text-muted">Admin controls</small>
+            </div>
+            <div class="card-body p-4">
+                <div class="row g-3">
+                    <div class="col-6">
+                        <a href="/Admin/EditLibrarian" class="action-card">
+                            <div class="action-icon" style="background:#eef2ff">
+                                <i class="bi bi-person-gear" style="color:#6366f1"></i>
+                            </div>
+                            <div style="font-size:13px;font-weight:600">Edit Librarian</div>
+                            <div style="font-size:11px;color:#8892a4;margin-top:2px">
+                                Update credentials
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-6">
+                        <a href="/Admin/Students" class="action-card">
+                            <div class="action-icon" style="background:#e8fdf5">
+                                <i class="bi bi-people" style="color:#10b981"></i>
+                            </div>
+                            <div style="font-size:13px;font-weight:600">Manage Students</div>
+                            <div style="font-size:11px;color:#8892a4;margin-top:2px">
+                                @Model.TotalStudents registered
+                            </div>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- System Health -->
+                <div class="mt-4 p-3 rounded-3" style="background:#f8f9ff">
+                    <div style="font-size:12px;font-weight:600;color:#8892a4;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:12px">
+                        System Overview
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span style="font-size:13px;color:#555">Active Students</span>
+                        <span style="font-size:13px;font-weight:600;color:#1a1a2e">
+                            @Model.ActiveStudents / @Model.TotalStudents
+                        </span>
+                    </div>
+                    <div class="progress mb-3" style="height:6px;border-radius:10px;background:#e0e3ef">
+                        @{
+                            var pct = Model.TotalStudents > 0
+                            ? (int)((double)Model.ActiveStudents / Model.TotalStudents * 100)
+                            : 0;
+                        }
+                        <div class="progress-bar"
+                             style="width:@pct%;background:linear-gradient(90deg,#6366f1,#8b5cf6);border-radius:10px"></div>
+                    </div>
+
+                    <div class="d-flex justify-content-between mb-2">
+                        <span style="font-size:13px;color:#555">Books on Loan</span>
+                        <span style="font-size:13px;font-weight:600;color:#1a1a2e">
+                            @Model.TotalIssued issued
+                        </span>
+                    </div>
+                    <div class="progress" style="height:6px;border-radius:10px;background:#e0e3ef">
+                        <div class="progress-bar"
+                             style="width:@(Model.TotalBooks > 0 ? (int)((double)Model.TotalIssued / Model.TotalBooks * 100) : 0)%;background:linear-gradient(90deg,#10b981,#38ef7d);border-radius:10px">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Email Logs -->
+<div class="section-card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <div>
+            <h6 class="fw-bold mb-0" style="color:#1a1a2e">
+                <i class="bi bi-envelope-open me-2" style="color:#6366f1"></i>
+                Recent Email Logs
+            </h6>
+            <small class="text-muted">Last 15 emails sent by the system</small>
+        </div>
+        <span style="font-size:12px;color:#8892a4">@Model.RecentEmails.Count emails</span>
+    </div>
+    <div class="card-body p-0">
+        <table class="table mb-0">
+            <thead>
+                <tr>
+                    <th class="ps-4">Recipient</th>
+                    <th>Subject</th>
+                    <th>Type</th>
+                    <th>Sent At</th>
+                    <th class="text-center">Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var log in Model.RecentEmails)
+                {
+                    <tr>
+                        <td class="ps-4" style="font-size:13px">@log.ToEmail</td>
+                        <td class="text-muted" style="font-size:13px;max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+                            @log.Subject
+                        </td>
+                        <td>
+                            @{
+                                var (tbg, tfg) = log.Type switch
+                                {
+                                                "Welcome" => ("#e8fdf5", "#10b981"),
+                                                "ForgotPassword" => ("#e8f4fd", "#3b82f6"),
+                                                "FineReminder" => ("#fff0f0", "#ef4444"),
+                                                "Reminder" => ("#fff7e6", "#f59e0b"),
+                                                "OTP" => ("#eef2ff", "#6366f1"),
+                                    _ => ("#f0f2f5", "#8892a4")
+                                };
+                            }
+                            <span class="badge" style="background:@tbg;color:@tfg">@log.Type</span>
+                        </td>
+                        <td class="text-muted" style="font-size:12px">
+                            @log.SentAt.ToString("dd MMM yyyy, hh:mm tt")
+                        </td>
+                        <td class="text-center">
+                            @if (log.IsSuccess)
+                            {
+                                <span class="badge" style="background:#e8fdf5;color:#10b981">
+                                    <i class="bi bi-check me-1"></i>Sent
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="badge" style="background:#fff0f0;color:#ef4444">
+                                    <i class="bi bi-x me-1"></i>Failed
+                                </span>
+                            }
+                        </td>
+                    </tr>
+                }
+                @if (!Model.RecentEmails.Any())
+                {
+                    <tr>
+                        <td colspan="5" class="text-center text-muted py-5">
+                            <i class="bi bi-envelope fs-1 d-block mb-2 opacity-25"></i>
+                            No emails sent yet
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $('#btn-toggle-lib').on('click', function () {
+            if (!confirm('Change librarian account status?')) return;
+            $.post('/Admin/ToggleLibrarianStatus', function (res) {
+                if (res.success) location.reload();
+                else alert(res.message);
+            });
+        });
+    </script>
+}

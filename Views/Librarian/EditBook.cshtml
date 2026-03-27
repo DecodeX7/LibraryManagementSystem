@@ -1,0 +1,47 @@
+﻿@model LibraryManagementSystem.Models.Entities.Book
+@{
+    ViewData["Title"] = "Edit Book";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="fw-bold mb-0"><i class="bi bi-pencil me-2 text-primary"></i>Edit Book</h4>
+    <a href="/Librarian/Books" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left me-1"></i>Back
+    </a>
+</div>
+
+<div class="card border-0 shadow-sm" style="max-width:600px">
+    <div class="card-body p-4">
+        <form asp-action="EditBook" method="post">
+            <input type="hidden" asp-for="BookId" />
+            <input type="hidden" asp-for="BookCode" />
+            <input type="hidden" asp-for="AvailableQuantity" />
+            <input type="hidden" asp-for="AddedBy" />
+            <input type="hidden" asp-for="CreatedAt" />
+
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Book Code</label>
+                <input value="@Model.BookCode" class="form-control bg-light" disabled />
+            </div>
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Book Name</label>
+                <input asp-for="BookName" class="form-control" />
+                <span asp-validation-for="BookName" class="text-danger small"></span>
+            </div>
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Author Name</label>
+                <input asp-for="AuthorName" class="form-control" />
+                <span asp-validation-for="AuthorName" class="text-danger small"></span>
+            </div>
+            <div class="mb-4">
+                <label class="form-label fw-semibold">Total Quantity</label>
+                <input asp-for="TotalQuantity" type="number" min="1" class="form-control" />
+                <span class="text-muted small">Currently issued: @(Model.TotalQuantity - Model.AvailableQuantity)</span>
+            </div>
+
+            <button type="submit" class="btn btn-primary px-4">
+                <i class="bi bi-check-circle me-1"></i>Save Changes
+            </button>
+        </form>
+    </div>
+</div>

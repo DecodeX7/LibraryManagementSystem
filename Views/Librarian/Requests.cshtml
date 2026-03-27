@@ -1,0 +1,239 @@
+﻿@model List<LibraryManagementSystem.Models.ViewModels.BookRequestViewModel>
+@{
+    ViewData["Title"] = "Book Requests";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="fw-bold mb-0">
+        <i class="bi bi-bell me-2 text-warning"></i>Book Requests
+        @{
+            var pending = Model.Count(r => r.Status == "Pending");
+        }
+        @if (pending > 0)
+        {
+            <span class="badge bg-danger ms-2">@pending pending</span>
+        }
+    </h4>
+</div>
+
+<div id="alert-box" class="d-none mb-3"></div>
+
+<!-- Filter Tabs -->
+<ul class="nav nav-tabs mb-3" id="reqTabs">
+    <li class="nav-item">
+        <a class="nav-link active" href="#" data-filter="all">All</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" href="#" data-filter="Pending">
+            Pending <span class="badge bg-warning text-dark">@pending</span>
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" href="#" data-filter="Approved">Approved</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" href="#" data-filter="Rejected">Rejected</a>
+    </li>
+</ul>
+
+<div class="card border-0 shadow-sm">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0 align-middle" id="req-table">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-3">#</th>
+                        <th>Student</th>
+                        <th>Book</th>
+                        <th class="text-center">Available</th>
+                        <th>Requested On</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var r in Model)
+                    {
+                        <tr data-status="@r.Status">
+                            <td class="ps-3 text-muted small">@r.RequestId</td>
+                            <td>
+                                <div class="fw-semibold">@r.StudentName</div>
+                                <small class="text-muted">@r.StudentEmail</small>
+                            </td>
+                            <td>
+                                <div>@r.BookName</div>
+                                <small class="text-muted"><code>@r.BookCode</code></small>
+                            </td>
+                            <td class="text-center">
+                                <span class="badge @(r.AvailableQty > 0 ? "bg-success" : "bg-danger")">
+                                    @r.AvailableQty
+                                </span>
+                            </td>
+                            <td class="small">@r.RequestDate.ToString("dd MMM yyyy, hh:mm tt")</td>
+                            <td>
+                                @{
+                                    var sc = r.Status switch
+                                    {
+                                                    "Pending" => "bg-warning text-dark",
+                                                    "Approved" => "bg-success",
+                                                    "Rejected" => "bg-danger",
+                                        _ => "bg-secondary"
+                                    };
+                                }
+                                <span class="badge @sc">@r.Status</span>
+                            </td>
+                            <td>
+                                @if (r.Status == "Pending")
+                                {
+                                    <button class="btn btn-success btn-sm btn-approve me-1"
+                                            data-id="@r.RequestId"
+                                            data-book="@r.BookName"
+                                            @(r.AvailableQty == 0 ? "disabled" : "")>
+                                        <i class="bi bi-check-lg"></i> Approve
+                                    </button>
+                                    <button class="btn btn-outline-danger btn-sm btn-reject"
+                                            data-id="@r.RequestId"
+                                            data-book="@r.BookName">
+                                        <i class="bi bi-x-lg"></i> Reject
+                                    </button>
+                                }
+                                else
+                                {
+                                    <span class="text-muted small">@r.Remarks</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                    @if (!Model.Any())
+                    {
+                        <tr><td colspan="7" class="text-center text-muted py-5">No requests found.</td></tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Approve Modal -->
+<div class="modal fade" id="approveModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <h6 class="modal-title fw-bold text-success">
+                    <i class="bi bi-check-circle me-2"></i>Approve Book Request
+                </h6>
+                <button class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Approving request for: <strong id="approve-book-name"></strong></p>
+                <label class="form-label fw-semibold">Issue Duration (days)</label>
+                <input type="number" id="issue-days" class="form-control" value="14" min="1" max="60" />
+                <small class="text-muted">Default: 14 days. Fine ₹10/day after due date.</small>
+            </div>
+            <div class="modal-footer border-0">
+                <button class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                <button class="btn btn-success btn-sm" id="confirm-approve">
+                    <i class="bi bi-check-lg me-1"></i>Approve & Issue
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Reject Modal -->
+<div class="modal fade" id="rejectModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <h6 class="modal-title fw-bold text-danger">
+                    <i class="bi bi-x-circle me-2"></i>Reject Request
+                </h6>
+                <button class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Rejecting request for: <strong id="reject-book-name"></strong></p>
+                <label class="form-label fw-semibold">Reason (optional)</label>
+                <textarea id="reject-remarks" class="form-control" rows="3"
+                          placeholder="e.g. Book not available, limit reached..."></textarea>
+            </div>
+            <div class="modal-footer border-0">
+                <button class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                <button class="btn btn-danger btn-sm" id="confirm-reject">
+                    <i class="bi bi-x-lg me-1"></i>Reject
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let currentRequestId = null;
+        const approveModal = new bootstrap.Modal(document.getElementById('approveModal'));
+        const rejectModal  = new bootstrap.Modal(document.getElementById('rejectModal'));
+
+        // Filter tabs
+        $('[data-filter]').on('click', function (e) {
+            e.preventDefault();
+            $('[data-filter]').removeClass('active');
+            $(this).addClass('active');
+            const filter = $(this).data('filter');
+            $('#req-table tbody tr').each(function () {
+                $(this).toggle(filter === 'all' || $(this).data('status') === filter);
+            });
+        });
+
+        // Approve click
+        $(document).on('click', '.btn-approve', function () {
+            currentRequestId = $(this).data('id');
+            $('#approve-book-name').text($(this).data('book'));
+            $('#issue-days').val(14);
+            approveModal.show();
+        });
+
+        // Confirm approve
+        $('#confirm-approve').on('click', function () {
+            const days = parseInt($('#issue-days').val());
+            if (!days || days < 1) { alert('Enter valid issue days.'); return; }
+
+            $(this).prop('disabled', true).html('<span class="spinner-border spinner-border-sm"></span>');
+
+            $.post('/Librarian/ApproveRequest', { requestId: currentRequestId, issueDays: days }, function (res) {
+                approveModal.hide();
+                showAlert(res.success ? 'success' : 'danger', res.message);
+                if (res.success) setTimeout(() => location.reload(), 1200);
+            }).always(() => {
+                $('#confirm-approve').prop('disabled', false).html('<i class="bi bi-check-lg me-1"></i>Approve & Issue');
+            });
+        });
+
+        // Reject click
+        $(document).on('click', '.btn-reject', function () {
+            currentRequestId = $(this).data('id');
+            $('#reject-book-name').text($(this).data('book'));
+            $('#reject-remarks').val('');
+            rejectModal.show();
+        });
+
+        // Confirm reject
+        $('#confirm-reject').on('click', function () {
+            $(this).prop('disabled', true).html('<span class="spinner-border spinner-border-sm"></span>');
+
+            $.post('/Librarian/RejectRequest', {
+                requestId: currentRequestId,
+                remarks: $('#reject-remarks').val()
+            }, function (res) {
+                rejectModal.hide();
+                showAlert(res.success ? 'success' : 'danger', res.message);
+                if (res.success) setTimeout(() => location.reload(), 1200);
+            }).always(() => {
+                $('#confirm-reject').prop('disabled', false).html('<i class="bi bi-x-lg me-1"></i>Reject');
+            });
+        });
+
+        function showAlert(type, msg) {
+            $('#alert-box').removeClass('d-none alert-success alert-danger')
+                .addClass(`alert alert-${type}`).text(msg);
+        }
+    </script>
+}

@@ -1,0 +1,131 @@
+﻿@model List<LibraryManagementSystem.Models.Entities.Book>
+@{
+    ViewData["Title"] = "Book Inventory";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="fw-bold mb-0"><i class="bi bi-journals me-2 text-primary"></i>Book Inventory</h4>
+    <a href="/Librarian/AddBooks" class="btn btn-success btn-sm">
+        <i class="bi bi-plus-lg me-1"></i>Add Books
+    </a>
+</div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show">@TempData["Success"]<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show">@TempData["Error"]<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+}
+
+<!-- Search -->
+<div class="mb-3">
+    <input type="text" id="search-books" class="form-control" placeholder="Search by book name, author or code..." style="max-width:400px" />
+</div>
+
+<div class="card border-0 shadow-sm">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0 align-middle" id="books-table">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-3">Book Code</th>
+                        <th>Book Name</th>
+                        <th>Author</th>
+                        <th class="text-center">Total</th>
+                        <th class="text-center">Available</th>
+                        <th class="text-center">Issued</th>
+                        <th>Added On</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var book in Model)
+                    {
+                        var issued = book.TotalQuantity - book.AvailableQuantity;
+                        <tr>
+                            <td class="ps-3"><code>@book.BookCode</code></td>
+                            <td class="fw-semibold">@book.BookName</td>
+                            <td class="text-muted">@book.AuthorName</td>
+                            <td class="text-center">@book.TotalQuantity</td>
+                            <td class="text-center">
+                                <span class="badge @(book.AvailableQuantity == 0 ? "bg-danger" : "bg-success")">
+                                    @book.AvailableQuantity
+                                </span>
+                            </td>
+                            <td class="text-center">@issued</td>
+                            <td class="small text-muted">@book.CreatedAt.ToString("dd MMM yyyy")</td>
+                            <td>
+                                <a href="/Librarian/EditBook/@book.BookId" class="btn btn-outline-primary btn-sm me-1">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <button class="btn btn-outline-danger btn-sm btn-delete"
+                                        data-id="@book.BookId" data-name="@book.BookName">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                    @if (!Model.Any())
+                    {
+                        <tr><td colspan="8" class="text-center text-muted py-5">No books found. <a href="/Librarian/AddBooks">Add some books</a></td></tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirm Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <h6 class="modal-title fw-bold text-danger"><i class="bi bi-exclamation-triangle me-2"></i>Confirm Delete</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                Are you sure you want to delete <strong id="delete-book-name"></strong>?
+            </div>
+            <div class="modal-footer border-0">
+                <button class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                <button class="btn btn-danger btn-sm" id="confirm-delete">Delete</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let deleteId = null;
+        const deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+
+        // Delete button click
+        $(document).on('click', '.btn-delete', function () {
+            deleteId = $(this).data('id');
+            $('#delete-book-name').text($(this).data('name'));
+            deleteModal.show();
+        });
+
+        // Confirm delete
+        $('#confirm-delete').on('click', function () {
+            $.post('/Librarian/DeleteBook', { id: deleteId }, function (res) {
+                if (res.success) {
+                    location.reload();
+                } else {
+                    alert(res.message);
+                    deleteModal.hide();
+                }
+            });
+        });
+
+        // Search filter
+        $('#search-books').on('keyup', function () {
+            const q = $(this).val().toLowerCase();
+            $('#books-table tbody tr').each(function () {
+                $(this).toggle($(this).text().toLowerCase().includes(q));
+            });
+        });
+    </script>
+}

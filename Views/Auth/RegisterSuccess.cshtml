@@ -1,0 +1,141 @@
+﻿@{
+    ViewData["Title"] = "Registration Successful";
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Registration Successful — Library MS</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet" />
+    <style>
+        body {
+            background: linear-gradient(135deg, #1a1a2e, #0f3460);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .success-card {
+            width: 100%;
+            max-width: 460px;
+        }
+
+        .check-circle {
+            width: 90px;
+            height: 90px;
+            background: rgba(46, 204, 113, 0.15);
+            border: 3px solid #2ecc71;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        @@keyframes popIn {
+            0% {
+                transform: scale(0);
+                opacity: 0;
+            }
+
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .progress-bar-animated {
+            transition: width 5s linear;
+        }
+
+        #redirect-bar {
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div class="success-card px-3">
+        <div class="card bg-dark text-white shadow-lg border-0 rounded-4 p-4 text-center">
+
+            <!-- Animated check circle -->
+            <div class="check-circle">
+                <i class="bi bi-check-lg text-success" style="font-size:42px"></i>
+            </div>
+
+            <h3 class="fw-bold mb-1">Registration Successful!</h3>
+            <p class="text-white-50 mb-1">
+                Welcome, <strong class="text-white">@ViewBag.Name</strong>!
+            </p>
+            <p class="text-white-50 small mb-4">
+                A welcome email has been sent to <strong class="text-info">@ViewBag.Email</strong>
+            </p>
+
+            <!-- What you can do now -->
+            <div class="bg-secondary bg-opacity-25 rounded-3 p-3 mb-4 text-start">
+                <p class="small fw-semibold mb-2 text-white-50">You can now:</p>
+                <div class="d-flex align-items-center gap-2 mb-1">
+                    <i class="bi bi-check-circle-fill text-success small"></i>
+                    <span class="small">Browse all available books</span>
+                </div>
+                <div class="d-flex align-items-center gap-2 mb-1">
+                    <i class="bi bi-check-circle-fill text-success small"></i>
+                    <span class="small">Request books from the library</span>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-check-circle-fill text-success small"></i>
+                    <span class="small">Track your issued books and due dates</span>
+                </div>
+            </div>
+
+            <!-- Auto redirect progress bar -->
+            <div class="mb-3">
+                <small class="text-white-50">
+                    Redirecting to login in <span id="countdown">5</span> seconds...
+                </small>
+                <div class="progress mt-2" style="height:4px;background:rgba(255,255,255,0.1)">
+                    <div id="redirect-bar"
+                         class="progress-bar bg-success"
+                         style="width:100%">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Manual login button -->
+            <a href="/Auth/Login?userType=Student"
+               class="btn btn-success w-100 fw-bold">
+                <i class="bi bi-box-arrow-in-right me-1"></i>Login Now
+            </a>
+
+            <p class="text-white-50 small mt-3 mb-0">
+                <i class="bi bi-envelope me-1"></i>
+                Check your inbox for the welcome email
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // Countdown + auto redirect
+        let seconds = 5;
+        const bar = document.getElementById('redirect-bar');
+        const count = document.getElementById('countdown');
+
+        // Start shrinking the bar
+        setTimeout(() => {
+            bar.style.width = '0%';
+        }, 100);
+
+        const timer = setInterval(() => {
+            seconds--;
+            count.textContent = seconds;
+            if (seconds <= 0) {
+                clearInterval(timer);
+                window.location.href = '/Auth/Login?userType=Student';
+            }
+        }, 1000);
+    </script>
+</body>
+</html>

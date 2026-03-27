@@ -1,0 +1,347 @@
+﻿@model List<LibraryManagementSystem.Models.ViewModels.IssuedBookViewModel>
+@{
+    ViewData["Title"] = "Issued Books";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="fw-bold mb-0">
+        <i class="bi bi-book me-2 text-warning"></i>Issued Books
+    </h4>
+    <div class="d-flex gap-2">
+        <input type="text" id="search-issued" class="form-control form-control-sm"
+               placeholder="Search..." style="width:220px" />
+    </div>
+</div>
+
+<div id="alert-box" class="d-none mb-3"></div>
+
+<!-- Filter Tabs -->
+<ul class="nav nav-tabs mb-3">
+    <li class="nav-item"><a class="nav-link active" href="#" data-filter="all">All</a></li>
+    <li class="nav-item"><a class="nav-link" href="#" data-filter="Issued">Active</a></li>
+    <li class="nav-item"><a class="nav-link" href="#" data-filter="overdue">Overdue</a></li>
+    <li class="nav-item"><a class="nav-link" href="#" data-filter="Returned">Returned</a></li>
+</ul>
+
+<div class="card border-0 shadow-sm">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0 align-middle small" id="issued-table">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-3">#</th>
+                        <th>Student</th>
+                        <th>Book</th>
+                        <th>Issue Date</th>
+                        <th>Due Date</th>
+                        <th>Status</th>
+                        <th class="text-center">Overdue</th>
+                        <th class="text-center">Fine</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var i in Model)
+                    {
+                        var isOverdue = i.OverdueDays > 0 && i.Status == "Issued";
+                        var isDueSoon = !isOverdue && i.Status == "Issued" &&
+                        (i.DueDate - DateTime.Now).TotalDays <= 3;
+                        var rowClass = isOverdue ? "table-warning" : "";
+                        <tr class="@rowClass"
+                            data-status="@i.Status"
+                            data-overdue="@(isOverdue ? "overdue" : "")">
+                            <td class="ps-3 text-muted">@i.IssueId</td>
+                            <td>
+                                <div class="fw-semibold">@i.StudentName</div>
+                                <small class="text-muted">@i.StudentEmail</small>
+                            </td>
+                            <td>
+                                <div>@i.BookName</div>
+                                <small class="text-muted"><code>@i.BookCode</code></small>
+                            </td>
+                            <td>@i.IssueDate.ToString("dd MMM yyyy")</td>
+                            <td class="@(isOverdue ? "text-danger fw-bold" : isDueSoon ? "text-warning fw-bold" : "")">
+                                @i.DueDate.ToString("dd MMM yyyy")
+                                @if (isDueSoon)
+                                {
+                                    <br />
+                            
+                                    <small class="text-warning">Due soon!</small>
+                                }
+                            </td>
+                            <td>
+                                @{
+                                    var sc = i.Status switch
+                                    {
+                                                    "Issued" when isOverdue => "bg-danger",
+                                                    "Issued" when isDueSoon => "bg-warning text-dark",
+                                                    "Issued" => "bg-warning text-dark",
+                                                    "Returned" => "bg-success",
+                                        _ => "bg-secondary"
+                                    };
+                                }
+                                <span class="badge @sc">
+                                    @(i.Status == "Issued" && isOverdue ? "Overdue" : i.Status)
+                                </span>
+                            </td>
+                            <td class="text-center">
+                                @if (isOverdue)
+                                {
+                                    <span class="text-danger fw-bold">@i.OverdueDays days</span>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">—</span>
+                                }
+                            </td>
+                            <td class="text-center">
+                                @if (i.FineAmount > 0 && i.Status == "Issued")
+                                {
+                                    <span class="@(i.FinePaid ? "text-success" : "text-danger") fw-bold">
+                                        ₹@i.FineAmount
+                                        @if (i.FinePaid)
+                                        {
+                                            <small>(Paid)</small>
+                                        }
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">—</span>
+                                }
+                            </td>
+                            <td>
+                                @if (i.Status == "Issued")
+                                {
+                                    <div class="d-flex gap-1 flex-wrap">
+                                        <!-- Return button -->
+                                        <button class="btn btn-success btn-sm btn-return"
+                                                data-id="@i.IssueId"
+                                                title="Mark as Returned">
+                                            <i class="bi bi-arrow-return-left"></i>
+                                        </button>
+
+                                        <!-- Reissue button -->
+                                        <button class="btn btn-primary btn-sm btn-reissue"
+                                                data-id="@i.IssueId"
+                                                data-book="@i.BookName"
+                                                title="Reissue Book">
+                                            <i class="bi bi-arrow-clockwise"></i>
+                                        </button>
+
+                                        <!-- SMART REMINDER BUTTON — always visible for issued books -->
+                                        <button class="btn btn-sm btn-remind @(isOverdue ? "btn-danger" : "btn-outline-info")"
+                                                data-id="@i.IssueId"
+                                                data-email="@i.StudentEmail"
+                                                data-overdue="@isOverdue.ToString().ToLower()"
+                                                title="@(isOverdue ? "Send Fine Notice" : "Send Return Reminder")">
+                                            <i class="bi bi-envelope@(isOverdue ? "-exclamation" : "")"></i>
+                                            @(isOverdue ? "Fine Notice" : "Remind")
+                                        </button>
+
+                                        <!-- Mark fine paid (only if overdue and unpaid) -->
+                                        @if (i.FineAmount > 0 && !i.FinePaid)
+                                        {
+                                            <button class="btn btn-outline-success btn-sm btn-paid"
+                                                    data-id="@i.IssueId"
+                                                    title="Mark Fine as Paid">
+                                                ₹ Paid
+                                            </button>
+                                        }
+                                    </div>
+                                }
+                                else
+                                {
+                                    <span class="text-muted small">
+                                        Returned: @(i.ReturnDate?.ToString("dd MMM yyyy") ?? "—")
+                                    </span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                    @if (!Model.Any())
+                    {
+                        <tr>
+                            <td colspan="9" class="text-center text-muted py-5">
+                                No issued books yet.
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Reissue Modal -->
+<div class="modal fade" id="reissueModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <h6 class="modal-title fw-bold text-primary">
+                    <i class="bi bi-arrow-clockwise me-2"></i>Reissue Book
+                </h6>
+                <button class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Reissuing: <strong id="reissue-book-name"></strong></p>
+                <label class="form-label fw-semibold">Additional Days</label>
+                <input type="number" id="reissue-days"
+                       class="form-control" value="7" min="1" max="30" />
+            </div>
+            <div class="modal-footer border-0">
+                <button class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                <button class="btn btn-primary btn-sm" id="confirm-reissue">
+                    <i class="bi bi-check-lg me-1"></i>Reissue
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Reminder Confirm Modal -->
+<div class="modal fade" id="reminderModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <h6 class="modal-title fw-bold" id="reminder-modal-title">
+                    <i class="bi bi-envelope me-2"></i>Send Reminder
+                </h6>
+                <button class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p id="reminder-modal-body"></p>
+                <div class="alert py-2 small mb-0" id="reminder-modal-note"></div>
+            </div>
+            <div class="modal-footer border-0">
+                <button class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                <button class="btn btn-sm" id="confirm-remind">
+                    <i class="bi bi-send me-1"></i>Send Email
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let currentIssueId = null;
+        let currentIsOverdue = false;
+        const reissueModal  = new bootstrap.Modal(document.getElementById('reissueModal'));
+        const reminderModal = new bootstrap.Modal(document.getElementById('reminderModal'));
+
+        // ── Filter tabs ───────────────────────────────────
+        $('[data-filter]').on('click', function (e) {
+            e.preventDefault();
+            $('[data-filter]').removeClass('active');
+            $(this).addClass('active');
+            const filter = $(this).data('filter');
+            $('#issued-table tbody tr').each(function () {
+                const status  = $(this).data('status');
+                const overdue = $(this).data('overdue');
+                if (filter === 'all')           $(this).show();
+                else if (filter === 'overdue')  $(this).toggle(overdue === 'overdue');
+                else                            $(this).toggle(status === filter);
+            });
+        });
+
+        // ── Search ────────────────────────────────────────
+        $('#search-issued').on('keyup', function () {
+            const q = $(this).val().toLowerCase();
+            $('#issued-table tbody tr').each(function () {
+                $(this).toggle($(this).text().toLowerCase().includes(q));
+            });
+        });
+
+        // ── Return ────────────────────────────────────────
+        $(document).on('click', '.btn-return', function () {
+            if (!confirm('Mark this book as returned?')) return;
+            $.post('/Librarian/ReturnBook', { issueId: $(this).data('id') }, function (res) {
+                showAlert(res.success ? 'success' : 'danger', res.message);
+                if (res.success) setTimeout(() => location.reload(), 1000);
+            });
+        });
+
+        // ── Reissue open ──────────────────────────────────
+        $(document).on('click', '.btn-reissue', function () {
+            currentIssueId = $(this).data('id');
+            $('#reissue-book-name').text($(this).data('book'));
+            $('#reissue-days').val(7);
+            reissueModal.show();
+        });
+
+        $('#confirm-reissue').on('click', function () {
+            const days = parseInt($('#reissue-days').val());
+            if (!days || days < 1) { alert('Enter valid days.'); return; }
+            $.post('/Librarian/ReissueBook', { issueId: currentIssueId, days }, function (res) {
+                reissueModal.hide();
+                showAlert(res.success ? 'success' : 'danger', res.message);
+                if (res.success) setTimeout(() => location.reload(), 1000);
+            });
+        });
+
+        // ── Smart Reminder open ───────────────────────────
+        $(document).on('click', '.btn-remind', function () {
+            currentIssueId   = $(this).data('id');
+            currentIsOverdue = $(this).data('overdue') === 'true';
+            const email      = $(this).data('email');
+
+            if (currentIsOverdue) {
+                $('#reminder-modal-title')
+                    .html('<i class="bi bi-envelope-exclamation me-2 text-danger"></i>Send Fine Notice');
+                $('#reminder-modal-body')
+                    .html(`Send an <strong>overdue fine notice</strong> to <strong>${email}</strong>?`);
+                $('#reminder-modal-note')
+                    .removeClass('alert-info').addClass('alert-danger')
+                    .html('This email will include overdue days and total fine amount (₹10/day).');
+                $('#confirm-remind')
+                    .removeClass('btn-info').addClass('btn-danger')
+                    .html('<i class="bi bi-send me-1"></i>Send Fine Notice');
+            } else {
+                $('#reminder-modal-title')
+                    .html('<i class="bi bi-envelope me-2 text-info"></i>Send Return Reminder');
+                $('#reminder-modal-body')
+                    .html(`Send a <strong>return reminder</strong> to <strong>${email}</strong>?`);
+                $('#reminder-modal-note')
+                    .removeClass('alert-danger').addClass('alert-info')
+                    .html('This email will remind the student about their due date with a friendly message.');
+                $('#confirm-remind')
+                    .removeClass('btn-danger').addClass('btn-info')
+                    .html('<i class="bi bi-send me-1"></i>Send Reminder');
+            }
+
+            reminderModal.show();
+        });
+
+        // ── Confirm send reminder ─────────────────────────
+        $('#confirm-remind').on('click', function () {
+            const btn = $(this).prop('disabled', true)
+                .html('<span class="spinner-border spinner-border-sm me-1"></span>Sending...');
+
+            $.post('/Librarian/SendReminder', { issueId: currentIssueId }, function (res) {
+                reminderModal.hide();
+                showAlert(res.success ? 'success' : 'danger', res.message);
+            }).always(() => {
+                btn.prop('disabled', false)
+                   .html('<i class="bi bi-send me-1"></i>Send Email');
+            });
+        });
+
+        // ── Mark fine paid ────────────────────────────────
+        $(document).on('click', '.btn-paid', function () {
+            if (!confirm('Mark fine as paid?')) return;
+            $.post('/Librarian/MarkFinePaid', { issueId: $(this).data('id') }, function (res) {
+                showAlert(res.success ? 'success' : 'danger', res.message);
+                if (res.success) setTimeout(() => location.reload(), 1000);
+            });
+        });
+
+        function showAlert(type, msg) {
+            $('#alert-box')
+                .removeClass('d-none alert-success alert-danger alert-warning')
+                .addClass(`alert alert-${type}`)
+                .text(msg);
+            $('html, body').animate({ scrollTop: 0 }, 300);
+        }
+    </script>
+}

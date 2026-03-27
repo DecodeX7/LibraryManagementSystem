@@ -1,0 +1,123 @@
+﻿@model LibraryManagementSystem.Models.ViewModels.EditLibrarianViewModel
+@{
+    ViewData["Title"] = "Edit Librarian";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="fw-bold mb-0">
+        <i class="bi bi-person-gear me-2 text-warning"></i>Edit Librarian Credentials
+    </h4>
+    <a href="/Admin/Dashboard" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left me-1"></i>Back
+    </a>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-4">
+
+                <div class="alert alert-info small mb-4">
+                    <i class="bi bi-info-circle me-2"></i>
+                    Leave <strong>New Password</strong> blank to keep the current password unchanged.
+                    Changing the email will change where OTP is sent on login.
+                </div>
+
+                <form asp-action="EditLibrarian" method="post">
+                    <input type="hidden" asp-for="UserId" />
+                    <div asp-validation-summary="All" class="text-danger small mb-3"></div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Full Name</label>
+                        <input asp-for="FullName" class="form-control"
+                               placeholder="Head Librarian" />
+                        <span asp-validation-for="FullName" class="text-danger small"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">
+                            Gmail Address
+                            <small class="text-muted fw-normal">
+                                (OTP will be sent here on login)
+                            </small>
+                        </label>
+                        <input asp-for="Email" class="form-control"
+                               placeholder="librarian@gmail.com" />
+                        <span asp-validation-for="Email" class="text-danger small"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">
+                            Librarian ID
+                            <small class="text-muted fw-normal">(used for login)</small>
+                        </label>
+                        <div class="input-group">
+                            <input asp-for="LibrarianId" class="form-control"
+                                   id="lib-id-input" />
+                            <button type="button" class="btn btn-outline-secondary"
+                                    id="btn-generate-id" title="Generate new ID">
+                                <i class="bi bi-arrow-repeat"></i> Generate New
+                            </button>
+                        </div>
+                        <span asp-validation-for="LibrarianId" class="text-danger small"></span>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">
+                            New Password
+                            <small class="text-muted fw-normal">(leave blank to keep current)</small>
+                        </label>
+                        <div class="input-group">
+                            <input asp-for="NewPassword" type="password"
+                                   class="form-control" id="new-password"
+                                   placeholder="Min 6 characters" />
+                            <button type="button" class="btn btn-outline-secondary"
+                                    id="btn-toggle-pwd">
+                                <i class="bi bi-eye" id="pwd-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-warning px-4 fw-bold">
+                            <i class="bi bi-check-circle me-1"></i>Save Changes
+                        </button>
+                        <a href="/Admin/Dashboard"
+                           class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Generate new LibrarianId
+        $('#btn-generate-id').on('click', function () {
+            $(this).prop('disabled', true)
+                   .html('<span class="spinner-border spinner-border-sm"></span>');
+            $.post('/Admin/GenerateLibrarianId', function (res) {
+                if (res.success) {
+                    $('#lib-id-input').val(res.librarianId);
+                }
+            }).always(() => {
+                $('#btn-generate-id').prop('disabled', false)
+                    .html('<i class="bi bi-arrow-repeat"></i> Generate New');
+            });
+        });
+
+        // Toggle password visibility
+        $('#btn-toggle-pwd').on('click', function () {
+            const input = $('#new-password');
+            const eye   = $('#pwd-eye');
+            if (input.attr('type') === 'password') {
+                input.attr('type', 'text');
+                eye.removeClass('bi-eye').addClass('bi-eye-slash');
+            } else {
+                input.attr('type', 'password');
+                eye.removeClass('bi-eye-slash').addClass('bi-eye');
+            }
+        });
+    </script>
+}
